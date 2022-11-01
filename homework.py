@@ -34,7 +34,7 @@ HOMEWORK_STATUSES = {
 
 
 def send_message(bot, message):
-    """Отправляет сообщение в Telegram чат
+    """Отправляет сообщение в Telegram чат.
     Определяемый переменной окружения TELEGRAM_CHAT_ID.
     Принимает на вход два параметра:
     экземпляр класса Bot и строку с текстом сообщения
@@ -95,12 +95,11 @@ def parse_status(homework):
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
-
 def check_tokens():
     """Проверяет доступность переменных окружения.
     Если отсутствует хотя бы одна переменная окружения —
     функция должна вернуть False, иначе — True.
-        """
+    """
     return all([TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, PRACTICUM_TOKEN])
 
 
