@@ -34,6 +34,11 @@ HOMEWORK_STATUSES = {
 
 
 def send_message(bot, message):
+    """Отправляет сообщение в Telegram чат
+    Определяемый переменной окружения TELEGRAM_CHAT_ID.
+    Принимает на вход два параметра:
+    экземпляр класса Bot и строку с текстом сообщения
+    """
     try:
         logging.info(f'Message sent: {message}')
         return bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
@@ -43,6 +48,9 @@ def send_message(bot, message):
 
 
 def get_api_answer(url, current_timestamp):
+    """Делает запрос к единственному эндпоинту API-сервиса.
+    Преобразование ответа API из формата JSON к типам данных Python.
+    """
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
@@ -61,6 +69,10 @@ def get_api_answer(url, current_timestamp):
 
 
 def check_response(response):
+    """Проверяет ответ API на корректность.
+    Функция должна вернуть список домашних работ
+    (он может быть и пустым), доступный в ответе API по ключу 'homeworks'.
+    """
     homeworks = response.get('homeworks')
     if not homeworks:
         raise Exception('Домашней работы не существует!')
@@ -72,6 +84,10 @@ def check_response(response):
 
 
 def parse_status(homework):
+    """Извлекает нужную информацию о статусе работы.
+    Функция возвращает подготовленную для отправки в Telegram строку,
+    содержащую один из вердиктов словаря HOMEWORK_STATUSES.
+    """
     homework_name = homework.get('homework_name')
     if homework_name is None:
         error_message = 'Homework name not exist'
@@ -87,6 +103,10 @@ def parse_status(homework):
 
 
 def check_tokens():
+    """Проверяет доступность переменных окружения.
+    Если отсутствует хотя бы одна переменная окружения —
+    функция должна вернуть False, иначе — True.
+        """
     return all([TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, PRACTICUM_TOKEN])
 
 
