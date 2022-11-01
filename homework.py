@@ -47,7 +47,7 @@ def send_message(bot, message):
         return 'Ошибка приложения Телеграм'
 
 
-def get_api_answer(url, current_timestamp):
+def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса.
     Преобразование ответа API из формата JSON к типам данных Python.
     """
@@ -55,7 +55,7 @@ def get_api_answer(url, current_timestamp):
     params = {'from_date': timestamp}
     try:
         homework_statuses = requests.get(
-            url,
+            ENDPOINT,
             headers=HEADERS,
             params=params
         )
@@ -73,14 +73,11 @@ def check_response(response):
     Функция должна вернуть список домашних работ
     (он может быть и пустым), доступный в ответе API по ключу 'homeworks'.
     """
-    homeworks = response.get('homeworks')
-    if not homeworks:
-        raise Exception('Домашней работы не существует!')
-    for homework in homeworks:
-        status = homework.get('status')
-        if status in HOMEWORK_STATUSES:
-            return homework
-        raise Exception('Статус не существует!')
+    if not isinstance(response['homeworks'], list):
+        logging.error('Запрос к серверу пришел не в виде списка')
+        send_message('Запрос к серверу пришел не в виде списка')
+        raise Exception('Некорректный ответ сервера')
+    return response['homeworks']
 
 
 def parse_status(homework):
@@ -88,18 +85,15 @@ def parse_status(homework):
     Функция возвращает подготовленную для отправки в Telegram строку,
     содержащую один из вердиктов словаря HOMEWORK_STATUSES.
     """
-    homework_name = homework.get('homework_name')
-    if homework_name is None:
-        error_message = 'Homework name not exist'
-        logging.error(error_message)
-        return error_message
-    homework_status = homework.get('homework_status')
-    try:
-        verdict = HOMEWORK_STATUSES[homework_status]
-    except KeyError:
-        logging.error(f'No such status: {homework_status}')
-        return 'Ошибка получения статуса'
+    homework_name = homework['homework_name']
+    homework_status = homework['status']
+    if homework_status not in HOMEWORK_STATUSES:
+        logging.error('Статус не существует!')
+        send_message('Статус не существует!')
+        raise Exception('Статус не существует!')
+    verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+
 
 
 def check_tokens():
@@ -119,7 +113,6 @@ def main():
         try:
             response = check_response(
                 get_api_answer(
-                    ENDPOINT,
                     current_timestamp
                 ))
             if response:
