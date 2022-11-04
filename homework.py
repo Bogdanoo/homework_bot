@@ -70,11 +70,12 @@ def get_api_answer(current_timestamp):
 
 
 def check_response(response):
-    """
-    P.S. При использовании метода get не проходит тесты : AttributeError: 'list' object has no attribute 'get'
+    """Проверяет ответ API на корректность.
+    Функция должна вернуть список домашних работ
+    (он может быть и пустым), доступный в ответе API по ключу 'homeworks'.
     """
     if not isinstance(response['homeworks'], list):
-        raise Exception('Запрос к серверу пришёл не в виде списка')
+        raise Exception('Некорректный ответ сервера')
     return response['homeworks']
 
 
@@ -104,10 +105,6 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time() - 604800)
     previous_status = None
-    if not check_tokens():
-        message = 'Отсутствует необходимая переменная среды'
-        logging.critical(message)
-        raise SystemExit
     while True:
         logging.debug('Bot is running')
         try:
