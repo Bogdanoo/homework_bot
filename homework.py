@@ -41,7 +41,7 @@ def send_message(bot, message):
     экземпляр класса Bot и строку с текстом сообщения
     """
     try:
-        logging.info(f'Message sent')
+        logging.info('Message sent')
         return bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
     except RequestException:
         logging.error('Telegram problem', exc_info=True)
