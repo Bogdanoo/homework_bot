@@ -6,6 +6,7 @@ import requests
 import telegram
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
+from http import HTTPStatus
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,11 +41,11 @@ def send_message(bot, message):
     экземпляр класса Bot и строку с текстом сообщения
     """
     try:
-        logging.info(f'Message sent: {message}')
+        logging.info(f'Message sent')
         return bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
     except RequestException:
         logging.error('Telegram problem', exc_info=True)
-        return 'Ошибка приложения Телеграм'
+        raise Exception('Ошибка приложения Телеграм')
 
 
 def get_api_answer(current_timestamp):
@@ -60,23 +61,20 @@ def get_api_answer(current_timestamp):
             params=params
         )
         logging.info('Server response')
-        if homework_statuses.status_code != 200:
+        if homework_statuses.status_code != HTTPStatus.OK:
             raise Exception('Error')
         return homework_statuses.json()
-    except RequestException:
+    except Exception:
         logging.error('Invalid response')
-        return 'Упс, что то пошло не так'
+        raise Exception('Упс, что то пошло не так')
 
 
 def check_response(response):
-    """Проверяет ответ API на корректность.
-    Функция должна вернуть список домашних работ
-    (он может быть и пустым), доступный в ответе API по ключу 'homeworks'.
+    """
+    P.S. При использовании метода get не проходит тесты : AttributeError: 'list' object has no attribute 'get'
     """
     if not isinstance(response['homeworks'], list):
-        logging.error('Запрос к серверу пришел не в виде списка')
-        send_message('Запрос к серверу пришел не в виде списка')
-        raise Exception('Некорректный ответ сервера')
+        raise Exception('Запрос к серверу пришёл не в виде списка')
     return response['homeworks']
 
 
@@ -88,8 +86,6 @@ def parse_status(homework):
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if homework_status not in HOMEWORK_STATUSES:
-        logging.error('Статус не существует!')
-        send_message('Статус не существует!')
         raise Exception('Статус не существует!')
     verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
@@ -106,23 +102,28 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
+    current_timestamp = int(time.time() - 604800)
+    previous_status = None
+    if not check_tokens():
+        message = 'Отсутствует необходимая переменная среды'
+        logging.critical(message)
+        raise SystemExit
     while True:
         logging.debug('Bot is running')
         try:
-            response = check_response(
-                get_api_answer(
-                    current_timestamp
-                ))
-            if response:
-                parsing = parse_status(response)
-                send_message(bot, parsing)
-            time.sleep(RETRY_TIME)
+            response = get_api_answer(current_timestamp)
+            homeworks = check_response(response)
+            homework_status = homeworks[0].get('status')
+            if homework_status != previous_status:
+                previous_status = homework_status
+                message = parse_status(homeworks[0])
+                send_message(bot, message)
+            current_timestamp = int(time.time())
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logging.error('Failure')
-            time.sleep(RETRY_TIME)
             bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        finally:
             time.sleep(RETRY_TIME)
 
 
