@@ -70,8 +70,8 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверяет ответ API на корректность.
-       Функция должна вернуть список домашних работ
-       (он может быть и пустым), доступный в ответе API по ключу 'homeworks'.
+    Функция должна вернуть список домашних работ
+    (он может быть и пустым), доступный в ответе API по ключу 'homeworks'.
     """
     if isinstance(response, dict):
         if 'homeworks' in response:
