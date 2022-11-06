@@ -43,7 +43,7 @@ def send_message(bot, message):
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logging.info(
-            f'Message sent to {TELEGRAM_CHAT_ID}')
+            f'Message sent')
     except RequestException:
         raise Exception('Ошибка приложения Телеграм')
 
@@ -73,17 +73,12 @@ def check_response(response):
     Функция должна вернуть список домашних работ
     (он может быть и пустым), доступный в ответе API по ключу 'homeworks'.
     """
-    if isinstance(response, dict):
-        if 'homeworks' in response:
-            homeworks = response.get('homeworks')
-            if isinstance(homeworks, list):
-                return homeworks
-            else:
-                raise TypeError
-        else:
-            raise KeyError
-    else:
-        raise TypeError
+    if not isinstance(response, dict):
+        raise TypeError('response is not a dict')
+    homeworks = response.get('homeworks')
+    if not isinstance(homeworks, list):
+        raise TypeError('Homeworks expected to be list')
+    return homeworks
 
 
 def parse_status(homework):
@@ -120,7 +115,7 @@ def main():
             homeworks = check_response(response)
             if not homeworks:
                 logging.error('Список домашних работ пуст')
-                raise KeyError
+                raise KeyError('Список домашних работ пуст')
             homework_status = homeworks[0].get('status')
             if homework_status != parse_status(homeworks[0]):
                 message = parse_status(homeworks[0])
